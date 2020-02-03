@@ -25,6 +25,9 @@ class MyApp extends HookWidget {
                 todo: todo,
                 onRemove: () => model.removeTodo(todo),
                 onToggle: () => model.toggleTodo(todo),
+                onEdit: (value) => model.editTodoTitle(todo, value),
+                onSubmit: () => model.focusOff(todo),
+                onTap: () => model.setFocused(todo),
               );
             },
             itemCount: model.todos.length,
@@ -32,8 +35,8 @@ class MyApp extends HookWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            model.addTodo(
-                Todo((model.todos.length + 1).toString(), "New todo", false));
+            model.addTodo(Todo(
+                (model.todos.length + 1).toString(), "New todo", true, false));
           },
           child: Icon(Icons.add),
         ),
@@ -54,14 +57,21 @@ class MyApp extends HookWidget {
 
 class TodoCell extends HookWidget {
   TodoCell({
+    //Named parameters:
     @required this.todo,
     @required this.onRemove,
     @required this.onToggle,
+    @required this.onEdit,
+    @required this.onSubmit,
+    @required this.onTap,
   });
 
   final Todo todo;
   final Function() onRemove;
   final Function() onToggle;
+  final Function(String) onEdit;
+  final Function() onSubmit;
+  final Function() onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +81,14 @@ class TodoCell extends HookWidget {
       key: Key(todo.id),
       child: ListTile(
         leading: Text(todo.id),
-        title: Text(todo.title),
+        title: Observer(
+          builder: (_) => TextField(
+            decoration: todo.focused ? InputDecoration() : null,
+            onChanged: (value) => onEdit(value),
+            onSubmitted: (_) => onSubmit(),
+            onTap: () => onTap(),
+          ),
+        ),
         trailing: Observer(
           builder: (_) => Checkbox(
             value: todo.completed,

@@ -23,4 +23,30 @@ abstract class TodosBase with Store {
   void removeTodo(Todo todoToRemove) {
     todos.remove(todoToRemove);
   }
+
+  @action
+  void editTodoTitle(Todo todoToEdit, String newTitle) {
+    todos.firstWhere((todo) => todo == todoToEdit).editTitle(newTitle);
+  }
+
+  @action
+  void setFocused(Todo todoToFocus) {
+    todos.forEach((todo) {
+      if(todo == todoToFocus) {
+        todo.focusOn();
+      } else {
+        todo.focusOff();
+      }
+    });
+  }
+
+  // @action
+  // void focusOn(Todo todoToSubmit) {
+  //   todos.firstWhere((todo) => todo == todoToSubmit).focusOn();
+  // }
+
+  @action
+  void focusOff(Todo todoToSubmit) {
+    todos.firstWhere((todo) => todo == todoToSubmit).focusOff();
+  }
 }
