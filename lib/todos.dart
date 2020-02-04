@@ -32,18 +32,13 @@ abstract class TodosBase with Store {
   @action
   void setFocused(Todo todoToFocus) {
     todos.forEach((todo) {
-      if(todo == todoToFocus) {
+      if (todo == todoToFocus) {
         todo.focusOn();
       } else {
         todo.focusOff();
       }
     });
   }
-
-  // @action
-  // void focusOn(Todo todoToSubmit) {
-  //   todos.firstWhere((todo) => todo == todoToSubmit).focusOn();
-  // }
 
   @action
   void focusOff(Todo todoToSubmit) {

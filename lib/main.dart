@@ -12,6 +12,7 @@ class MyApp extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final model = useMemoized(() => Todos());
+    final scrollController = ScrollController();
 
     return MaterialApp(
       darkTheme: ThemeData.dark(),
@@ -19,6 +20,7 @@ class MyApp extends HookWidget {
       home: Scaffold(
         body: Observer(
           builder: (_) => ListView.builder(
+            controller: scrollController,
             itemBuilder: (context, index) {
               final todo = model.todos[index];
               return TodoCell(
@@ -35,8 +37,11 @@ class MyApp extends HookWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            model.addTodo(Todo(
-                (model.todos.length + 1).toString(), "New todo", true, false));
+            Todo todo = Todo(
+                (model.todos.length + 1).toString(), "New todo", true, false);
+            model.addTodo(todo);
+            model.setFocused(todo);
+            scrollController.jumpTo(scrollController.position.maxScrollExtent);
           },
           child: Icon(Icons.add),
         ),
@@ -54,6 +59,57 @@ class MyApp extends HookWidget {
     );
   }
 }
+
+// Example:
+// class SomeWidget extends StatefulWidget {
+//   SomeWidget({Key key}) : super(key: key);
+
+//   @override
+//   _SomeWidgetState createState() => _SomeWidgetState();
+// }
+
+// class _SomeWidgetState extends State<SomeWidget> {
+//   int x = 0; // 1
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       children: [
+//         Text(this.x.toString()),
+//         RaisedButton(onPressed: () {
+//           setState(() {
+//             x = x + 1;
+//           });
+//         }),
+//       ],
+//     );
+//   }
+// }
+
+// class SomeHookWidget extends HookWidget {
+//   const SomeHookWidget({Key key}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final x = useState(0);
+
+//     useEffect(() {
+//       print("Initialize");
+//       return () {
+//         print("Dispose");
+//       };
+//     }, []);
+
+//     return Column(
+//       children: [
+//         Text(x.value.toString()),
+//         RaisedButton(onPressed: () {
+//           x.value = 1;
+//         }),
+//       ],
+//     );
+//   }
+// }
 
 class TodoCell extends HookWidget {
   TodoCell({
@@ -73,21 +129,41 @@ class TodoCell extends HookWidget {
   final Function() onSubmit;
   final Function() onTap;
 
+  ValueNotifier<FocusNode> useFocusNode() {
+    final focus = useState(FocusNode());
+
+    useEffect(() {
+      return () {
+        focus.value.dispose();
+      };
+    }, []);
+
+    return focus;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // final opacity = useState(0.0);
+    final focusNode = useFocusNode();
+
+    useEffect(() {
+      FocusScope.of(context).requestFocus(focusNode.value);
+      return () {};
+    }, []);
 
     return Dismissible(
       key: Key(todo.id),
       child: ListTile(
         leading: Text(todo.id),
         title: Observer(
-          builder: (_) => TextField(
-            decoration: todo.focused ? InputDecoration() : null,
-            onChanged: (value) => onEdit(value),
-            onSubmitted: (_) => onSubmit(),
-            onTap: () => onTap(),
-          ),
+          builder: (_) {
+            return TextField(
+              focusNode: focusNode.value,
+              decoration: todo.focused ? InputDecoration() : null,
+              onChanged: (value) => onEdit(value),
+              onSubmitted: (_) => onSubmit(),
+              onTap: () => onTap(),
+            );
+          },
         ),
         trailing: Observer(
           builder: (_) => Checkbox(
